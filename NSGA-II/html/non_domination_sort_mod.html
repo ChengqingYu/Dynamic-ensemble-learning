@@ -1,0 +1,432 @@
+<html xmlns:mwsh="http://www.mathworks.com/namespace/mcode/v1/syntaxhighlight.dtd">
+   <head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   
+      <!--
+This HTML is auto-generated from an M-file.
+To make changes, update the M-file and republish this document.
+      -->
+      <title>non_domination_sort_mod</title>
+      <meta name="generator" content="MATLAB 7.0">
+      <meta name="date" content="2006-03-16">
+      <meta name="m-file" content="non_domination_sort_mod"><style>
+body {
+  background-color: white;
+  margin:10px;
+}
+h1 {
+  color: #990000; 
+  font-size: x-large;
+}
+h2 {
+  color: #990000;
+  font-size: medium;
+}
+p.footer {
+  text-align: right;
+  font-size: xx-small;
+  font-weight: lighter;
+  font-style: italic;
+  color: gray;
+}
+
+pre.codeinput {
+  margin-left: 30px;
+}
+
+span.keyword {color: #0000FF}
+span.comment {color: #228B22}
+span.string {color: #A020F0}
+span.untermstring {color: #B20000}
+span.syscmd {color: #B28C00}
+
+pre.showbuttons {
+  margin-left: 30px;
+  border: solid black 2px;
+  padding: 4px;
+  background: #EBEFF3;
+}
+
+pre.codeoutput {
+  color: gray;
+  font-style: italic;
+}
+pre.error {
+  color: red;
+}
+
+/* Make the text shrink to fit narrow windows, but not stretch too far in 
+wide windows.  On Gecko-based browsers, the shrink-to-fit doesn't work. */ 
+p,h1,h2,div {
+  /* for MATLAB's browser */
+  width: 600px;
+  /* for Mozilla, but the "width" tag overrides it anyway */
+  max-width: 600px;
+  /* for IE */
+  width:expression(document.body.clientWidth > 620 ? "600px": "auto" );
+}
+
+    </style></head>
+   <body>
+      <h2>Contents</h2>
+      <div>
+         <ul>
+            <li><a href="#1">function f = non_domination_sort_mod(x, M, V)</a></li>
+            <li><a href="#2">Non-Dominated sort.</a></li>
+            <li><a href="#3">Crowding distance</a></li>
+            <li><a href="#4">References</a></li>
+         </ul>
+      </div>
+      <h2>function f = non_domination_sort_mod(x, M, V)<a name="1"></a></h2>
+      <p>This function sort the current popultion based on non-domination. All the individuals in the first front are given a rank
+         of 1, the second front individuals are assigned rank 2 and so on. After assigning the rank the crowding in each front is calculated.
+      </p><pre class="codeinput">[N, m] = size(x);
+clear <span class="string">m</span>
+
+<span class="comment">% Initialize the front number to 1.</span>
+front = 1;
+
+<span class="comment">% There is nothing to this assignment, used only to manipulate easily in</span>
+<span class="comment">% MATLAB.</span>
+F(front).f = [];
+individual = [];
+</pre><h2>Non-Dominated sort.<a name="2"></a></h2>
+      <p>The initialized population is sorted based on non-domination. The fast sort algorithm [1] is described as below for each</p><pre class="codeinput"><span class="comment">% &#149; for each individual p in main population P do the following</span>
+<span class="comment">%   &#150; Initialize Sp = []. This set would contain all the individuals that is</span>
+<span class="comment">%     being dominated by p.</span>
+<span class="comment">%   &#150; Initialize np = 0. This would be the number of individuals that domi-</span>
+<span class="comment">%     nate p.</span>
+<span class="comment">%   &#150; for each individual q in P</span>
+<span class="comment">%       * if p dominated q then</span>
+<span class="comment">%           &middot; add q to the set Sp i.e. Sp = Sp ? {q}</span>
+<span class="comment">%       * else if q dominates p then</span>
+<span class="comment">%           &middot; increment the domination counter for p i.e. np = np + 1</span>
+<span class="comment">%   &#150; if np = 0 i.e. no individuals dominate p then p belongs to the first</span>
+<span class="comment">%     front; Set rank of individual p to one i.e prank = 1. Update the first</span>
+<span class="comment">%     front set by adding p to front one i.e F1 = F1 ? {p}</span>
+<span class="comment">% &#149; This is carried out for all the individuals in main population P.</span>
+<span class="comment">% &#149; Initialize the front counter to one. i = 1</span>
+<span class="comment">% &#149; following is carried out while the ith front is nonempty i.e. Fi != []</span>
+<span class="comment">%   &#150; Q = []. The set for storing the individuals for (i + 1)th front.</span>
+<span class="comment">%   &#150; for each individual p in front Fi</span>
+<span class="comment">%       * for each individual q in Sp (Sp is the set of individuals</span>
+<span class="comment">%         dominated by p)</span>
+<span class="comment">%           &middot; nq = nq?1, decrement the domination count for individual q.</span>
+<span class="comment">%           &middot; if nq = 0 then none of the individuals in the subsequent</span>
+<span class="comment">%             fronts would dominate q. Hence set qrank = i + 1. Update</span>
+<span class="comment">%             the set Q with individual q i.e. Q = Q ? q.</span>
+<span class="comment">%   &#150; Increment the front counter by one.</span>
+<span class="comment">%   &#150; Now the set Q is the next front and hence Fi = Q.</span>
+<span class="comment">%</span>
+<span class="comment">% This algorithm is better than the original NSGA ([2]) since it utilize</span>
+<span class="comment">% the informatoion about the set that an individual dominate (Sp) and</span>
+<span class="comment">% number of individuals that dominate the individual (np).</span>
+
+<span class="comment">%</span>
+<span class="keyword">for</span> i = 1 : N
+    <span class="comment">% Number of individuals that dominate this individual</span>
+    individual(i).n = 0;
+    <span class="comment">% Individuals which this individual dominate</span>
+    individual(i).p = [];
+    <span class="keyword">for</span> j = 1 : N
+        dom_less = 0;
+        dom_equal = 0;
+        dom_more = 0;
+        <span class="keyword">for</span> k = 1 : M
+            <span class="keyword">if</span> (x(i,V + k) &lt; x(j,V + k))
+                dom_less = dom_less + 1;
+            <span class="keyword">elseif</span> (x(i,V + k) == x(j,V + k))
+                dom_equal = dom_equal + 1;
+            <span class="keyword">else</span>
+                dom_more = dom_more + 1;
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+        <span class="keyword">if</span> dom_less == 0 &amp;&amp; dom_equal ~= M
+            individual(i).n = individual(i).n + 1;
+        <span class="keyword">elseif</span> dom_more == 0 &amp;&amp; dom_equal ~= M
+            individual(i).p = [individual(i).p j];
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+    <span class="keyword">if</span> individual(i).n == 0
+        x(i,M + V + 1) = 1;
+        F(front).f = [F(front).f i];
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+<span class="comment">% Find the subsequent fronts</span>
+<span class="keyword">while</span> ~isempty(F(front).f)
+   Q = [];
+   <span class="keyword">for</span> i = 1 : length(F(front).f)
+       <span class="keyword">if</span> ~isempty(individual(F(front).f(i)).p)
+        	<span class="keyword">for</span> j = 1 : length(individual(F(front).f(i)).p)
+            	individual(individual(F(front).f(i)).p(j)).n = <span class="keyword">...</span>
+                	individual(individual(F(front).f(i)).p(j)).n - 1;
+        	   	<span class="keyword">if</span> individual(individual(F(front).f(i)).p(j)).n == 0
+               		x(individual(F(front).f(i)).p(j),M + V + 1) = <span class="keyword">...</span>
+                        front + 1;
+                    Q = [Q individual(F(front).f(i)).p(j)];
+                <span class="keyword">end</span>
+            <span class="keyword">end</span>
+       <span class="keyword">end</span>
+   <span class="keyword">end</span>
+   front =  front + 1;
+   F(front).f = Q;
+<span class="keyword">end</span>
+
+[temp,index_of_fronts] = sort(x(:,M + V + 1));
+<span class="keyword">for</span> i = 1 : length(index_of_fronts)
+    sorted_based_on_front(i,:) = x(index_of_fronts(i),:);
+<span class="keyword">end</span>
+current_index = 0;
+</pre><h2>Crowding distance<a name="3"></a></h2><pre class="codeinput"><span class="comment">%The crowing distance is calculated as below</span>
+<span class="comment">% &#149; For each front Fi, n is the number of individuals.</span>
+<span class="comment">%   &#150; initialize the distance to be zero for all the individuals i.e. Fi(dj ) = 0,</span>
+<span class="comment">%     where j corresponds to the jth individual in front Fi.</span>
+<span class="comment">%   &#150; for each objective function m</span>
+<span class="comment">%       * Sort the individuals in front Fi based on objective m i.e. I =</span>
+<span class="comment">%         sort(Fi,m).</span>
+<span class="comment">%       * Assign infinite distance to boundary values for each individual</span>
+<span class="comment">%         in Fi i.e. I(d1) = ? and I(dn) = ?</span>
+<span class="comment">%       * for k = 2 to (n ? 1)</span>
+<span class="comment">%           &middot; I(dk) = I(dk) + (I(k + 1).m ? I(k ? 1).m)/fmax(m) - fmin(m)</span>
+<span class="comment">%           &middot; I(k).m is the value of the mth objective function of the kth</span>
+<span class="comment">%             individual in I</span>
+
+<span class="comment">% Find the crowding distance for each individual in each front</span>
+<span class="keyword">for</span> front = 1 : (length(F) - 1)
+<span class="comment">%    objective = [];</span>
+    distance = 0;
+    y = [];
+    previous_index = current_index + 1;
+    <span class="keyword">for</span> i = 1 : length(F(front).f)
+        y(i,:) = sorted_based_on_front(current_index + i,:);
+    <span class="keyword">end</span>
+    current_index = current_index + i;
+    <span class="comment">% Sort each individual based on the objective</span>
+    sorted_based_on_objective = [];
+    <span class="keyword">for</span> i = 1 : M
+        [sorted_based_on_objective, index_of_objectives] = <span class="keyword">...</span>
+            sort(y(:,V + i));
+        sorted_based_on_objective = [];
+        <span class="keyword">for</span> j = 1 : length(index_of_objectives)
+            sorted_based_on_objective(j,:) = y(index_of_objectives(j),:);
+        <span class="keyword">end</span>
+        f_max = <span class="keyword">...</span>
+            sorted_based_on_objective(length(index_of_objectives), V + i);
+        f_min = sorted_based_on_objective(1, V + i);
+        y(index_of_objectives(length(index_of_objectives)),M + V + 1 + i)<span class="keyword">...</span>
+            = Inf;
+        y(index_of_objectives(1),M + V + 1 + i) = Inf;
+         <span class="keyword">for</span> j = 2 : length(index_of_objectives) - 1
+            next_obj  = sorted_based_on_objective(j + 1,V + i);
+            previous_obj  = sorted_based_on_objective(j - 1,V + i);
+            <span class="keyword">if</span> (f_max - f_min == 0)
+                y(index_of_objectives(j),M + V + 1 + i) = Inf;
+            <span class="keyword">else</span>
+                y(index_of_objectives(j),M + V + 1 + i) = <span class="keyword">...</span>
+                     (next_obj - previous_obj)/(f_max - f_min);
+            <span class="keyword">end</span>
+         <span class="keyword">end</span>
+    <span class="keyword">end</span>
+    distance = [];
+    distance(:,1) = zeros(length(F(front).f),1);
+    <span class="keyword">for</span> i = 1 : M
+        distance(:,1) = distance(:,1) + y(:,M + V + 1 + i);
+    <span class="keyword">end</span>
+    y(:,M + V + 2) = distance;
+    y = y(:,1 : M + V + 2);
+    z(previous_index:current_index,:) = y;
+<span class="keyword">end</span>
+f = z();
+</pre><h2>References<a name="4"></a></h2>
+      <p>[1] <b>Kalyanmoy Deb, Amrit Pratap, Sameer Agarwal, and T. Meyarivan</b>, <tt>A Fast Elitist Multiobjective Genetic Algorithm: NSGA-II</tt>, IEEE Transactions on Evolutionary Computation 6 (2002), no. 2, 182 ~ 197.
+      </p>
+      <p>[2] <b>N. Srinivas and Kalyanmoy Deb</b>, <tt>Multiobjective Optimization Using Nondominated Sorting in Genetic Algorithms</tt>, Evolutionary Computation 2 (1994), no. 3, 221 ~ 248.
+      </p>
+      <p class="footer"><br>
+         Published with MATLAB&reg; 7.0<br></p>
+      <!--
+##### SOURCE BEGIN #####
+
+
+%% function f = non_domination_sort_mod(x, M, V)
+% This function sort the current popultion based on non-domination. All the
+% individuals in the first front are given a rank of 1, the second front
+% individuals are assigned rank 2 and so on. After assigning the rank the
+% crowding in each front is calculated.
+
+[N, m] = size(x);
+clear m
+
+% Initialize the front number to 1.
+front = 1;
+
+% There is nothing to this assignment, used only to manipulate easily in
+% MATLAB.
+F(front).f = [];
+individual = [];
+
+%% Non-Dominated sort. 
+% The initialized population is sorted based on non-domination. The fast
+% sort algorithm [1] is described as below for each
+
+%  for each individual p in main population P do the following
+%    Initialize Sp = []. This set would contain all the individuals that is
+%     being dominated by p.
+%    Initialize np = 0. This would be the number of individuals that domi-
+%     nate p.
+%    for each individual q in P
+%       * if p dominated q then
+%           · add q to the set Sp i.e. Sp = Sp ? {q}
+%       * else if q dominates p then
+%           · increment the domination counter for p i.e. np = np + 1
+%    if np = 0 i.e. no individuals dominate p then p belongs to the first
+%     front; Set rank of individual p to one i.e prank = 1. Update the first
+%     front set by adding p to front one i.e F1 = F1 ? {p}
+%  This is carried out for all the individuals in main population P.
+%  Initialize the front counter to one. i = 1
+%  following is carried out while the ith front is nonempty i.e. Fi != []
+%    Q = []. The set for storing the individuals for (i + 1)th front.
+%    for each individual p in front Fi
+%       * for each individual q in Sp (Sp is the set of individuals
+%         dominated by p)
+%           · nq = nq?1, decrement the domination count for individual q.
+%           · if nq = 0 then none of the individuals in the subsequent
+%             fronts would dominate q. Hence set qrank = i + 1. Update
+%             the set Q with individual q i.e. Q = Q ? q.
+%    Increment the front counter by one.
+%    Now the set Q is the next front and hence Fi = Q.
+%
+% This algorithm is better than the original NSGA ([2]) since it utilize
+% the informatoion about the set that an individual dominate (Sp) and
+% number of individuals that dominate the individual (np).
+
+%
+for i = 1 : N
+    % Number of individuals that dominate this individual
+    individual(i).n = 0;
+    % Individuals which this individual dominate
+    individual(i).p = [];
+    for j = 1 : N
+        dom_less = 0;
+        dom_equal = 0;
+        dom_more = 0;
+        for k = 1 : M
+            if (x(i,V + k) < x(j,V + k))
+                dom_less = dom_less + 1;
+            elseif (x(i,V + k) == x(j,V + k))
+                dom_equal = dom_equal + 1;
+            else
+                dom_more = dom_more + 1;
+            end
+        end
+        if dom_less == 0 && dom_equal ~= M
+            individual(i).n = individual(i).n + 1;
+        elseif dom_more == 0 && dom_equal ~= M
+            individual(i).p = [individual(i).p j];
+        end
+    end   
+    if individual(i).n == 0
+        x(i,M + V + 1) = 1;
+        F(front).f = [F(front).f i];
+    end
+end
+% Find the subsequent fronts
+while ~isempty(F(front).f)
+   Q = [];
+   for i = 1 : length(F(front).f)
+       if ~isempty(individual(F(front).f(i)).p)
+        	for j = 1 : length(individual(F(front).f(i)).p)
+            	individual(individual(F(front).f(i)).p(j)).n = ...
+                	individual(individual(F(front).f(i)).p(j)).n - 1;
+        	   	if individual(individual(F(front).f(i)).p(j)).n == 0
+               		x(individual(F(front).f(i)).p(j),M + V + 1) = ...
+                        front + 1;
+                    Q = [Q individual(F(front).f(i)).p(j)];
+                end
+            end
+       end
+   end
+   front =  front + 1;
+   F(front).f = Q;
+end
+
+[temp,index_of_fronts] = sort(x(:,M + V + 1));
+for i = 1 : length(index_of_fronts)
+    sorted_based_on_front(i,:) = x(index_of_fronts(i),:);
+end
+current_index = 0;
+
+%% Crowding distance
+%The crowing distance is calculated as below
+%  For each front Fi, n is the number of individuals.
+%    initialize the distance to be zero for all the individuals i.e. Fi(dj ) = 0,
+%     where j corresponds to the jth individual in front Fi.
+%    for each objective function m
+%       * Sort the individuals in front Fi based on objective m i.e. I =
+%         sort(Fi,m).
+%       * Assign infinite distance to boundary values for each individual
+%         in Fi i.e. I(d1) = ? and I(dn) = ?
+%       * for k = 2 to (n ? 1)
+%           · I(dk) = I(dk) + (I(k + 1).m ? I(k ? 1).m)/fmax(m) - fmin(m)
+%           · I(k).m is the value of the mth objective function of the kth
+%             individual in I
+
+% Find the crowding distance for each individual in each front
+for front = 1 : (length(F) - 1)
+%    objective = [];
+    distance = 0;
+    y = [];
+    previous_index = current_index + 1;
+    for i = 1 : length(F(front).f)
+        y(i,:) = sorted_based_on_front(current_index + i,:);
+    end
+    current_index = current_index + i;
+    % Sort each individual based on the objective
+    sorted_based_on_objective = [];
+    for i = 1 : M
+        [sorted_based_on_objective, index_of_objectives] = ...
+            sort(y(:,V + i));
+        sorted_based_on_objective = [];
+        for j = 1 : length(index_of_objectives)
+            sorted_based_on_objective(j,:) = y(index_of_objectives(j),:);
+        end
+        f_max = ...
+            sorted_based_on_objective(length(index_of_objectives), V + i);
+        f_min = sorted_based_on_objective(1, V + i);
+        y(index_of_objectives(length(index_of_objectives)),M + V + 1 + i)...
+            = Inf;
+        y(index_of_objectives(1),M + V + 1 + i) = Inf;
+         for j = 2 : length(index_of_objectives) - 1
+            next_obj  = sorted_based_on_objective(j + 1,V + i);
+            previous_obj  = sorted_based_on_objective(j - 1,V + i);
+            if (f_max - f_min == 0)
+                y(index_of_objectives(j),M + V + 1 + i) = Inf;
+            else
+                y(index_of_objectives(j),M + V + 1 + i) = ...
+                     (next_obj - previous_obj)/(f_max - f_min);
+            end
+         end
+    end
+    distance = [];
+    distance(:,1) = zeros(length(F(front).f),1);
+    for i = 1 : M
+        distance(:,1) = distance(:,1) + y(:,M + V + 1 + i);
+    end
+    y(:,M + V + 2) = distance;
+    y = y(:,1 : M + V + 2);
+    z(previous_index:current_index,:) = y;
+end
+f = z();
+
+%% References
+% [1] *Kalyanmoy Deb, Amrit Pratap, Sameer Agarwal, and T. Meyarivan*, |A Fast
+% Elitist Multiobjective Genetic Algorithm: NSGA-II|, IEEE Transactions on 
+% Evolutionary Computation 6 (2002), no. 2, 182 ~ 197.
+%
+% [2] *N. Srinivas and Kalyanmoy Deb*, |Multiobjective Optimization Using 
+% Nondominated Sorting in Genetic Algorithms|, Evolutionary Computation 2 
+% (1994), no. 3, 221 ~ 248.
+##### SOURCE END #####
+-->
+   </body>
+</html>

@@ -1,0 +1,195 @@
+<html xmlns:mwsh="http://www.mathworks.com/namespace/mcode/v1/syntaxhighlight.dtd">
+   <head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   
+      <!--
+This HTML is auto-generated from an M-file.
+To make changes, update the M-file and republish this document.
+      -->
+      <title>evaluate_objective</title>
+      <meta name="generator" content="MATLAB 7.0">
+      <meta name="date" content="2006-03-16">
+      <meta name="m-file" content="evaluate_objective"><style>
+body {
+  background-color: white;
+  margin:10px;
+}
+h1 {
+  color: #990000; 
+  font-size: x-large;
+}
+h2 {
+  color: #990000;
+  font-size: medium;
+}
+p.footer {
+  text-align: right;
+  font-size: xx-small;
+  font-weight: lighter;
+  font-style: italic;
+  color: gray;
+}
+
+pre.codeinput {
+  margin-left: 30px;
+}
+
+span.keyword {color: #0000FF}
+span.comment {color: #228B22}
+span.string {color: #A020F0}
+span.untermstring {color: #B20000}
+span.syscmd {color: #B28C00}
+
+pre.showbuttons {
+  margin-left: 30px;
+  border: solid black 2px;
+  padding: 4px;
+  background: #EBEFF3;
+}
+
+pre.codeoutput {
+  color: gray;
+  font-style: italic;
+}
+pre.error {
+  color: red;
+}
+
+/* Make the text shrink to fit narrow windows, but not stretch too far in 
+wide windows.  On Gecko-based browsers, the shrink-to-fit doesn't work. */ 
+p,h1,h2,div {
+  /* for MATLAB's browser */
+  width: 600px;
+  /* for Mozilla, but the "width" tag overrides it anyway */
+  max-width: 600px;
+  /* for IE */
+  width:expression(document.body.clientWidth > 620 ? "600px": "auto" );
+}
+
+    </style></head>
+   <body>
+      <h2>Contents</h2>
+      <div>
+         <ul>
+            <li><a href="#1">function f = evaluate_objective(x, M, V)</a></li>
+            <li><a href="#2">Kursawe proposed by Frank Kursawe.</a></li>
+            <li><a href="#3">Check for error</a></li>
+         </ul>
+      </div>
+      <h2>function f = evaluate_objective(x, M, V)<a name="1"></a></h2>
+      <p>Function to evaluate the objective functions for the given input vector x. x is an array of decision variables and f(1), f(2),
+         etc are the objective functions. The algorithm always minimizes the objective function hence if you would like to maximize
+         the function then multiply the function by negative one. M is the numebr of objective functions and V is the number of decision
+         variables.
+      </p>
+      <p>This functions is basically written by the user who defines his/her own objective function. Make sure that the M and V matches
+         your initial user input. Make sure that the
+      </p>
+      <p>An example objective function is given below. It has two six decision variables are two objective functions.</p><pre class="codeinput"><span class="comment">% f = [];</span>
+<span class="comment">% %% Objective function one</span>
+<span class="comment">% % Decision variables are used to form the objective function.</span>
+<span class="comment">% f(1) = 1 - exp(-4*x(1))*(sin(6*pi*x(1)))^6;</span>
+<span class="comment">% sum = 0;</span>
+<span class="comment">% for i = 2 : 6</span>
+<span class="comment">%     sum = sum + x(i)/4;</span>
+<span class="comment">% end</span>
+<span class="comment">% %% Intermediate function</span>
+<span class="comment">% g_x = 1 + 9*(sum)^(0.25);</span>
+<span class="comment">%</span>
+<span class="comment">% %% Objective function two</span>
+<span class="comment">% f(2) = g_x*(1 - ((f(1))/(g_x))^2);</span>
+</pre><h2>Kursawe proposed by Frank Kursawe.<a name="2"></a></h2>
+      <p>Take a look at the following reference A variant of evolution strategies for vector optimization. In H. P. Schwefel and R.
+         M&auml;nner, editors, Parallel Problem Solving from Nature. 1st Workshop, PPSN I, volume 496 of Lecture Notes in Computer Science,
+         pages 193-197, Berlin, Germany, oct 1991. Springer-Verlag.
+      </p>
+      <p>Number of objective is two, while it can have arbirtarly many decision variables within the range -5 and 5. Common number
+         of variables is 3.
+      </p><pre class="codeinput">f = [];
+<span class="comment">% Objective function one</span>
+sum = 0;
+<span class="keyword">for</span> i = 1 : V - 1
+    sum = sum - 10*exp(-0.2*sqrt((x(i))^2 + (x(i + 1))^2));
+<span class="keyword">end</span>
+<span class="comment">% Decision variables are used to form the objective function.</span>
+f(1) = sum;
+
+<span class="comment">% Objective function two</span>
+sum = 0;
+<span class="keyword">for</span> i = 1 : V
+    sum = sum + (abs(x(i))^0.8 + 5*(sin(x(i)))^3);
+<span class="keyword">end</span>
+<span class="comment">% Decision variables are used to form the objective function.</span>
+f(2) = sum;
+</pre><h2>Check for error<a name="3"></a></h2><pre class="codeinput"><span class="keyword">if</span> length(f) ~= M
+    error(<span class="string">'The number of decision variables does not match you previous input. Kindly check your objective function'</span>);
+<span class="keyword">end</span>
+</pre><p class="footer"><br>
+         Published with MATLAB&reg; 7.0<br></p>
+      <!--
+##### SOURCE BEGIN #####
+
+
+%% function f = evaluate_objective(x, M, V)
+% Function to evaluate the objective functions for the given input vector
+% x. x is an array of decision variables and f(1), f(2), etc are the
+% objective functions. The algorithm always minimizes the objective
+% function hence if you would like to maximize the function then multiply
+% the function by negative one. M is the numebr of objective functions and
+% V is the number of decision variables. 
+%
+% This functions is basically written by the user who defines his/her own
+% objective function. Make sure that the M and V matches your initial user
+% input. Make sure that the 
+%
+% An example objective function is given below. It has two six decision
+% variables are two objective functions.
+
+% f = [];
+% %% Objective function one
+% % Decision variables are used to form the objective function.
+% f(1) = 1 - exp(-4*x(1))*(sin(6*pi*x(1)))^6;
+% sum = 0;
+% for i = 2 : 6
+%     sum = sum + x(i)/4;
+% end
+% %% Intermediate function
+% g_x = 1 + 9*(sum)^(0.25);
+% 
+% %% Objective function two
+% f(2) = g_x*(1 - ((f(1))/(g_x))^2);
+
+%% Kursawe proposed by Frank Kursawe.
+% Take a look at the following reference
+% A variant of evolution strategies for vector optimization.
+% In H. P. Schwefel and R. Männer, editors, Parallel Problem Solving from
+% Nature. 1st Workshop, PPSN I, volume 496 of Lecture Notes in Computer 
+% Science, pages 193-197, Berlin, Germany, oct 1991. Springer-Verlag. 
+%
+% Number of objective is two, while it can have arbirtarly many decision
+% variables within the range -5 and 5. Common number of variables is 3.
+f = [];
+% Objective function one
+sum = 0;
+for i = 1 : V - 1
+    sum = sum - 10*exp(-0.2*sqrt((x(i))^2 + (x(i + 1))^2));
+end
+% Decision variables are used to form the objective function.
+f(1) = sum;
+
+% Objective function two
+sum = 0;
+for i = 1 : V
+    sum = sum + (abs(x(i))^0.8 + 5*(sin(x(i)))^3);
+end
+% Decision variables are used to form the objective function.
+f(2) = sum;
+
+%% Check for error
+if length(f) ~= M
+    error('The number of decision variables does not match you previous input. Kindly check your objective function');
+end
+##### SOURCE END #####
+-->
+   </body>
+</html>

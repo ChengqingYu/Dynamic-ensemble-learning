@@ -1,0 +1,401 @@
+<html xmlns:mwsh="http://www.mathworks.com/namespace/mcode/v1/syntaxhighlight.dtd">
+   <head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   
+      <!--
+This HTML is auto-generated from an M-file.
+To make changes, update the M-file and republish this document.
+      -->
+      <title>function nsga_2(pop,gen)</title>
+      <meta name="generator" content="MATLAB 7.0">
+      <meta name="date" content="2006-03-16">
+      <meta name="m-file" content="nsga_2"><style>
+body {
+  background-color: white;
+  margin:10px;
+}
+h1 {
+  color: #990000; 
+  font-size: x-large;
+}
+h2 {
+  color: #990000;
+  font-size: medium;
+}
+p.footer {
+  text-align: right;
+  font-size: xx-small;
+  font-weight: lighter;
+  font-style: italic;
+  color: gray;
+}
+
+pre.codeinput {
+  margin-left: 30px;
+}
+
+span.keyword {color: #0000FF}
+span.comment {color: #228B22}
+span.string {color: #A020F0}
+span.untermstring {color: #B20000}
+span.syscmd {color: #B28C00}
+
+pre.showbuttons {
+  margin-left: 30px;
+  border: solid black 2px;
+  padding: 4px;
+  background: #EBEFF3;
+}
+
+pre.codeoutput {
+  color: gray;
+  font-style: italic;
+}
+pre.error {
+  color: red;
+}
+
+/* Make the text shrink to fit narrow windows, but not stretch too far in 
+wide windows.  On Gecko-based browsers, the shrink-to-fit doesn't work. */ 
+p,h1,h2,div {
+  /* for MATLAB's browser */
+  width: 600px;
+  /* for Mozilla, but the "width" tag overrides it anyway */
+  max-width: 600px;
+  /* for IE */
+  width:expression(document.body.clientWidth > 620 ? "600px": "auto" );
+}
+
+    </style></head>
+   <body>
+      <h1>function nsga_2(pop,gen)</h1>
+      <introduction>
+         <p>is a multi-objective optimization function where the input arguments are pop - Population size gen - Total number of generations</p>
+         <p>This functions is based on evolutionary algorithm for finding the optimal solution for multiple objective i.e. pareto front
+            for the objectives. Initially enter only the population size and the stoping criteria or the total number of generations after
+            which the algorithm will automatically stopped.
+         </p>
+         <p>You will be asked to enter the number of objective functions, the number of decision variables and the range space for the
+            decision variables. Also you will have to define your own objective funciton by editing the evaluate_objective() function.
+            A sample objective function is described in evaluate_objective.m. Kindly make sure that the objective function which you define
+            match the number of objectives that you have entered as well as the number of decision variables that you have entered. The
+            decision variable space is continuous for this function, but the objective space may or may not be continuous.
+         </p>
+         <p>Original algorithm NSGA-II was developed by researchers in Kanpur Genetic Algorithm Labarotary and kindly visit their website
+            for more information <a href="http://www.iitk.ac.in/kangal/">http://www.iitk.ac.in/kangal/</a></p>
+      </introduction>
+      <h2>Contents</h2>
+      <div>
+         <ul>
+            <li><a href="#1">Simple error checking</a></li>
+            <li><a href="#2">Objective Function</a></li>
+            <li><a href="#3">Initialize the population</a></li>
+            <li><a href="#4">Sort the initialized population</a></li>
+            <li><a href="#5">Start the evolution process</a></li>
+            <li><a href="#6">Result</a></li>
+            <li><a href="#7">Visualize</a></li>
+         </ul>
+      </div>
+      <h2>Simple error checking<a name="1"></a></h2>
+      <p>Number of Arguments Check for the number of arguments. The two input arguments are necessary to run this function.</p><pre class="codeinput"><span class="keyword">if</span> nargin &lt; 2
+    error(<span class="string">'NSGA-II: Please enter the population size and number of generations as input arguments.'</span>);
+<span class="keyword">end</span>
+<span class="comment">% Both the input arguments need to of integer data type</span>
+<span class="keyword">if</span> isnumeric(pop) == 0 || isnumeric(gen) == 0
+    error(<span class="string">'Both input arguments pop and gen should be integer datatype'</span>);
+<span class="keyword">end</span>
+<span class="comment">% Minimum population size has to be 20 individuals</span>
+<span class="keyword">if</span> pop &lt; 20
+    error(<span class="string">'Minimum population for running this function is 20'</span>);
+<span class="keyword">end</span>
+<span class="keyword">if</span> gen &lt; 5
+    error(<span class="string">'Minimum number of generations is 5'</span>);
+<span class="keyword">end</span>
+<span class="comment">% Make sure pop and gen are integers</span>
+pop = round(pop);
+gen = round(gen);
+</pre><h2>Objective Function<a name="2"></a></h2>
+      <p>The objective function description contains information about the objective function. M is the dimension of the objective
+         space, V is the dimension of decision variable space, min_range and max_range are the range for the variables in the decision
+         variable space. User has to define the objective functions using the decision variables. Make sure to edit the function 'evaluate_objective'
+         to suit your needs.
+      </p><pre class="codeinput">[M, V, min_range, max_range] = objective_description_function();
+</pre><h2>Initialize the population<a name="3"></a></h2>
+      <p>Population is initialized with random values which are within the specified range. Each chromosome consists of the decision
+         variables. Also the value of the objective functions, rank and crowding distance information is also added to the chromosome
+         vector but only the elements of the vector which has the decision variables are operated upon to perform the genetic operations
+         like corssover and mutation.
+      </p><pre class="codeinput">chromosome = initialize_variables(pop, M, V, min_range, max_range);
+</pre><h2>Sort the initialized population<a name="4"></a></h2>
+      <p>Sort the population using non-domination-sort. This returns two columns for each individual which are the rank and the crowding
+         distance corresponding to their position in the front they belong. At this stage the rank and the crowding distance for each
+         chromosome is added to the chromosome vector for easy of computation.
+      </p><pre class="codeinput">chromosome = non_domination_sort_mod(chromosome, M, V);
+</pre><h2>Start the evolution process<a name="5"></a></h2>
+      <p>The following are performed in each generation * Select the parents which are fit for reproduction * Perfrom crossover and
+         Mutation operator on the selected parents * Perform Selection from the parents and the offsprings * Replace the unfit individuals
+         with the fit individuals to maintain a   constant population size.
+      </p><pre class="codeinput"><span class="keyword">for</span> i = 1 : gen
+    <span class="comment">% Select the parents</span>
+    <span class="comment">% Parents are selected for reproduction to generate offspring. The</span>
+    <span class="comment">% original NSGA-II uses a binary tournament selection based on the</span>
+    <span class="comment">% crowded-comparision operator. The arguments are</span>
+    <span class="comment">% pool - size of the mating pool. It is common to have this to be half the</span>
+    <span class="comment">%        population size.</span>
+    <span class="comment">% tour - Tournament size. Original NSGA-II uses a binary tournament</span>
+    <span class="comment">%        selection, but to see the effect of tournament size this is kept</span>
+    <span class="comment">%        arbitary, to be choosen by the user.</span>
+    pool = round(pop/2);
+    tour = 2;
+    <span class="comment">% Selection process</span>
+    <span class="comment">% A binary tournament selection is employed in NSGA-II. In a binary</span>
+    <span class="comment">% tournament selection process two individuals are selected at random</span>
+    <span class="comment">% and their fitness is compared. The individual with better fitness is</span>
+    <span class="comment">% selcted as a parent. Tournament selection is carried out until the</span>
+    <span class="comment">% pool size is filled. Basically a pool size is the number of parents</span>
+    <span class="comment">% to be selected. The input arguments to the function</span>
+    <span class="comment">% tournament_selection are chromosome, pool, tour. The function uses</span>
+    <span class="comment">% only the information from last two elements in the chromosome vector.</span>
+    <span class="comment">% The last element has the crowding distance information while the</span>
+    <span class="comment">% penultimate element has the rank information. Selection is based on</span>
+    <span class="comment">% rank and if individuals with same rank are encountered, crowding</span>
+    <span class="comment">% distance is compared. A lower rank and higher crowding distance is</span>
+    <span class="comment">% the selection criteria.</span>
+    parent_chromosome = tournament_selection(chromosome, pool, tour);
+
+    <span class="comment">% Perfrom crossover and Mutation operator</span>
+    <span class="comment">% The original NSGA-II algorithm uses Simulated Binary Crossover (SBX) and</span>
+    <span class="comment">% Polynomial  mutation. Crossover probability pc = 0.9 and mutation</span>
+    <span class="comment">% probability is pm = 1/n, where n is the number of decision variables.</span>
+    <span class="comment">% Both real-coded GA and binary-coded GA are implemented in the original</span>
+    <span class="comment">% algorithm, while in this program only the real-coded GA is considered.</span>
+    <span class="comment">% The distribution indeices for crossover and mutation operators as mu = 20</span>
+    <span class="comment">% and mum = 20 respectively.</span>
+    mu = 20;
+    mum = 20;
+    offspring_chromosome = <span class="keyword">...</span>
+        genetic_operator(parent_chromosome, <span class="keyword">...</span>
+        M, V, mu, mum, min_range, max_range);
+
+    <span class="comment">% Intermediate population</span>
+    <span class="comment">% Intermediate population is the combined population of parents and</span>
+    <span class="comment">% offsprings of the current generation. The population size is two</span>
+    <span class="comment">% times the initial population.</span>
+
+    [main_pop,temp] = size(chromosome);
+    [offspring_pop,temp] = size(offspring_chromosome);
+    <span class="comment">% temp is a dummy variable.</span>
+    clear <span class="string">temp</span>
+    <span class="comment">% intermediate_chromosome is a concatenation of current population and</span>
+    <span class="comment">% the offspring population.</span>
+    intermediate_chromosome(1:main_pop,:) = chromosome;
+    intermediate_chromosome(main_pop + 1 : main_pop + offspring_pop,1 : M+V) = <span class="keyword">...</span>
+        offspring_chromosome;
+
+    <span class="comment">% Non-domination-sort of intermediate population</span>
+    <span class="comment">% The intermediate population is sorted again based on non-domination sort</span>
+    <span class="comment">% before the replacement operator is performed on the intermediate</span>
+    <span class="comment">% population.</span>
+    intermediate_chromosome = <span class="keyword">...</span>
+        non_domination_sort_mod(intermediate_chromosome, M, V);
+    <span class="comment">% Perform Selection</span>
+    <span class="comment">% Once the intermediate population is sorted only the best solution is</span>
+    <span class="comment">% selected based on it rank and crowding distance. Each front is filled in</span>
+    <span class="comment">% ascending order until the addition of population size is reached. The</span>
+    <span class="comment">% last front is included in the population based on the individuals with</span>
+    <span class="comment">% least crowding distance</span>
+    chromosome = replace_chromosome(intermediate_chromosome, M, V, pop);
+    <span class="keyword">if</span> ~mod(i,100)
+        clc
+        fprintf(<span class="string">'%d generations completed\n'</span>,i);
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+</pre><h2>Result<a name="6"></a></h2>
+      <p>Save the result in ASCII text format.</p><pre class="codeinput">save <span class="string">solution.txt</span> <span class="string">chromosome</span> <span class="string">-ASCII</span>
+</pre><h2>Visualize<a name="7"></a></h2>
+      <p>The following is used to visualize the result if objective space dimension is visualizable.</p><pre class="codeinput"><span class="keyword">if</span> M == 2
+    plot(chromosome(:,V + 1),chromosome(:,V + 2),<span class="string">'*'</span>);
+<span class="keyword">elseif</span> M ==3
+    plot3(chromosome(:,V + 1),chromosome(:,V + 2),chromosome(:,V + 3),<span class="string">'*'</span>);
+<span class="keyword">end</span>
+</pre><p class="footer"><br>
+         Published with MATLAB&reg; 7.0<br></p>
+      <!--
+##### SOURCE BEGIN #####
+
+
+%% function nsga_2(pop,gen)
+% is a multi-objective optimization function where the input arguments are 
+% pop - Population size
+% gen - Total number of generations
+% 
+% This functions is based on evolutionary algorithm for finding the optimal
+% solution for multiple objective i.e. pareto front for the objectives. 
+% Initially enter only the population size and the stoping criteria or
+% the total number of generations after which the algorithm will
+% automatically stopped. 
+%
+% You will be asked to enter the number of objective functions, the number
+% of decision variables and the range space for the decision variables.
+% Also you will have to define your own objective funciton by editing the
+% evaluate_objective() function. A sample objective function is described
+% in evaluate_objective.m. Kindly make sure that the objective function
+% which you define match the number of objectives that you have entered as
+% well as the number of decision variables that you have entered. The
+% decision variable space is continuous for this function, but the
+% objective space may or may not be continuous.
+%
+% Original algorithm NSGA-II was developed by researchers in Kanpur Genetic
+% Algorithm Labarotary and kindly visit their website for more information
+% http://www.iitk.ac.in/kangal/
+
+%% Simple error checking
+% Number of Arguments
+% Check for the number of arguments. The two input arguments are necessary
+% to run this function.
+if nargin < 2
+    error('NSGA-II: Please enter the population size and number of generations as input arguments.');
+end
+% Both the input arguments need to of integer data type
+if isnumeric(pop) == 0 || isnumeric(gen) == 0
+    error('Both input arguments pop and gen should be integer datatype');
+end
+% Minimum population size has to be 20 individuals
+if pop < 20
+    error('Minimum population for running this function is 20');
+end
+if gen < 5
+    error('Minimum number of generations is 5');
+end
+% Make sure pop and gen are integers
+pop = round(pop);
+gen = round(gen);
+%% Objective Function
+% The objective function description contains information about the
+% objective function. M is the dimension of the objective space, V is the
+% dimension of decision variable space, min_range and max_range are the
+% range for the variables in the decision variable space. User has to
+% define the objective functions using the decision variables. Make sure to
+% edit the function 'evaluate_objective' to suit your needs.
+[M, V, min_range, max_range] = objective_description_function();
+
+%% Initialize the population
+% Population is initialized with random values which are within the
+% specified range. Each chromosome consists of the decision variables. Also
+% the value of the objective functions, rank and crowding distance
+% information is also added to the chromosome vector but only the elements
+% of the vector which has the decision variables are operated upon to
+% perform the genetic operations like corssover and mutation.
+chromosome = initialize_variables(pop, M, V, min_range, max_range);
+
+
+%% Sort the initialized population
+% Sort the population using non-domination-sort. This returns two columns
+% for each individual which are the rank and the crowding distance
+% corresponding to their position in the front they belong. At this stage
+% the rank and the crowding distance for each chromosome is added to the
+% chromosome vector for easy of computation.
+chromosome = non_domination_sort_mod(chromosome, M, V);
+
+%% Start the evolution process
+% The following are performed in each generation
+% * Select the parents which are fit for reproduction
+% * Perfrom crossover and Mutation operator on the selected parents
+% * Perform Selection from the parents and the offsprings
+% * Replace the unfit individuals with the fit individuals to maintain a
+%   constant population size.
+
+for i = 1 : gen
+    % Select the parents
+    % Parents are selected for reproduction to generate offspring. The
+    % original NSGA-II uses a binary tournament selection based on the
+    % crowded-comparision operator. The arguments are 
+    % pool - size of the mating pool. It is common to have this to be half the
+    %        population size.
+    % tour - Tournament size. Original NSGA-II uses a binary tournament
+    %        selection, but to see the effect of tournament size this is kept
+    %        arbitary, to be choosen by the user.
+    pool = round(pop/2);
+    tour = 2;
+    % Selection process
+    % A binary tournament selection is employed in NSGA-II. In a binary
+    % tournament selection process two individuals are selected at random
+    % and their fitness is compared. The individual with better fitness is
+    % selcted as a parent. Tournament selection is carried out until the
+    % pool size is filled. Basically a pool size is the number of parents
+    % to be selected. The input arguments to the function
+    % tournament_selection are chromosome, pool, tour. The function uses
+    % only the information from last two elements in the chromosome vector.
+    % The last element has the crowding distance information while the
+    % penultimate element has the rank information. Selection is based on
+    % rank and if individuals with same rank are encountered, crowding
+    % distance is compared. A lower rank and higher crowding distance is
+    % the selection criteria.
+    parent_chromosome = tournament_selection(chromosome, pool, tour);
+
+    % Perfrom crossover and Mutation operator
+    % The original NSGA-II algorithm uses Simulated Binary Crossover (SBX) and
+    % Polynomial  mutation. Crossover probability pc = 0.9 and mutation
+    % probability is pm = 1/n, where n is the number of decision variables.
+    % Both real-coded GA and binary-coded GA are implemented in the original
+    % algorithm, while in this program only the real-coded GA is considered.
+    % The distribution indeices for crossover and mutation operators as mu = 20
+    % and mum = 20 respectively.
+    mu = 20;
+    mum = 20;
+    offspring_chromosome = ...
+        genetic_operator(parent_chromosome, ...
+        M, V, mu, mum, min_range, max_range);
+
+    % Intermediate population
+    % Intermediate population is the combined population of parents and
+    % offsprings of the current generation. The population size is two
+    % times the initial population.
+    
+    [main_pop,temp] = size(chromosome);
+    [offspring_pop,temp] = size(offspring_chromosome);
+    % temp is a dummy variable.
+    clear temp
+    % intermediate_chromosome is a concatenation of current population and
+    % the offspring population.
+    intermediate_chromosome(1:main_pop,:) = chromosome;
+    intermediate_chromosome(main_pop + 1 : main_pop + offspring_pop,1 : M+V) = ...
+        offspring_chromosome;
+
+    % Non-domination-sort of intermediate population
+    % The intermediate population is sorted again based on non-domination sort
+    % before the replacement operator is performed on the intermediate
+    % population.
+    intermediate_chromosome = ...
+        non_domination_sort_mod(intermediate_chromosome, M, V);
+    % Perform Selection
+    % Once the intermediate population is sorted only the best solution is
+    % selected based on it rank and crowding distance. Each front is filled in
+    % ascending order until the addition of population size is reached. The
+    % last front is included in the population based on the individuals with
+    % least crowding distance
+    chromosome = replace_chromosome(intermediate_chromosome, M, V, pop);
+    if ~mod(i,100)
+        clc
+        fprintf('%d generations completed\n',i);
+    end
+end
+
+%% Result
+% Save the result in ASCII text format.
+save solution.txt chromosome -ASCII
+
+%% Visualize
+% The following is used to visualize the result if objective space
+% dimension is visualizable.
+if M == 2
+    plot(chromosome(:,V + 1),chromosome(:,V + 2),'*');
+elseif M ==3
+    plot3(chromosome(:,V + 1),chromosome(:,V + 2),chromosome(:,V + 3),'*');
+end
+    
+
+##### SOURCE END #####
+-->
+   </body>
+</html>

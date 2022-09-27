@@ -1,0 +1,355 @@
+<html xmlns:mwsh="http://www.mathworks.com/namespace/mcode/v1/syntaxhighlight.dtd">
+   <head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   
+      <!--
+This HTML is auto-generated from an M-file.
+To make changes, update the M-file and republish this document.
+      -->
+      <title>function f  = genetic_operator(parent_chromosome, M, V, mu, mum, l_limit, u_limit)</title>
+      <meta name="generator" content="MATLAB 7.0">
+      <meta name="date" content="2006-03-16">
+      <meta name="m-file" content="genetic_operator"><style>
+body {
+  background-color: white;
+  margin:10px;
+}
+h1 {
+  color: #990000; 
+  font-size: x-large;
+}
+h2 {
+  color: #990000;
+  font-size: medium;
+}
+p.footer {
+  text-align: right;
+  font-size: xx-small;
+  font-weight: lighter;
+  font-style: italic;
+  color: gray;
+}
+
+pre.codeinput {
+  margin-left: 30px;
+}
+
+span.keyword {color: #0000FF}
+span.comment {color: #228B22}
+span.string {color: #A020F0}
+span.untermstring {color: #B20000}
+span.syscmd {color: #B28C00}
+
+pre.showbuttons {
+  margin-left: 30px;
+  border: solid black 2px;
+  padding: 4px;
+  background: #EBEFF3;
+}
+
+pre.codeoutput {
+  color: gray;
+  font-style: italic;
+}
+pre.error {
+  color: red;
+}
+
+/* Make the text shrink to fit narrow windows, but not stretch too far in 
+wide windows.  On Gecko-based browsers, the shrink-to-fit doesn't work. */ 
+p,h1,h2,div {
+  /* for MATLAB's browser */
+  width: 600px;
+  /* for Mozilla, but the "width" tag overrides it anyway */
+  max-width: 600px;
+  /* for IE */
+  width:expression(document.body.clientWidth > 620 ? "600px": "auto" );
+}
+
+    </style></head>
+   <body>
+      <h1>function f  = genetic_operator(parent_chromosome, M, V, mu, mum, l_limit, u_limit)</h1>
+      <p>This function is utilized to produce offsprings from parent chromosomes. The genetic operators corssover and mutation which
+         are carried out with slight modifications from the original design. For more information read the document enclosed.
+      </p>
+      <p>parent_chromosome - the set of selected chromosomes. M - number of objective functions V - number of decision varaiables mu
+         - distribution index for crossover (read the enlcosed pdf file) mum - distribution index for mutation (read the enclosed pdf
+         file) l_limit - a vector of lower limit for the corresponding decsion variables u_limit - a vector of upper limit for the
+         corresponding decsion variables
+      </p>
+      <p>The genetic operation is performed only on the decision variables, that is the first V elements in the chromosome vector.</p><pre class="codeinput">[N,m] = size(parent_chromosome);
+
+clear <span class="string">m</span>
+p = 1;
+<span class="comment">% Flags used to set if crossover and mutation were actually performed.</span>
+was_crossover = 0;
+was_mutation = 0;
+
+
+<span class="keyword">for</span> i = 1 : N
+    <span class="comment">% With 90 % probability perform crossover</span>
+    <span class="keyword">if</span> rand(1) &lt; 0.9
+        <span class="comment">% Initialize the children to be null vector.</span>
+        child_1 = [];
+        child_2 = [];
+        <span class="comment">% Select the first parent</span>
+        parent_1 = round(N*rand(1));
+        <span class="keyword">if</span> parent_1 &lt; 1
+            parent_1 = 1;
+        <span class="keyword">end</span>
+        <span class="comment">% Select the second parent</span>
+        parent_2 = round(N*rand(1));
+        <span class="keyword">if</span> parent_2 &lt; 1
+            parent_2 = 1;
+        <span class="keyword">end</span>
+        <span class="comment">% Make sure both the parents are not the same.</span>
+        <span class="keyword">while</span> isequal(parent_chromosome(parent_1,:),parent_chromosome(parent_2,:))
+            parent_2 = round(N*rand(1));
+            <span class="keyword">if</span> parent_2 &lt; 1
+                parent_2 = 1;
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+        <span class="comment">% Get the chromosome information for each randomnly selected</span>
+        <span class="comment">% parents</span>
+        parent_1 = parent_chromosome(parent_1,:);
+        parent_2 = parent_chromosome(parent_2,:);
+        <span class="comment">% Perform corssover for each decision variable in the chromosome.</span>
+        <span class="keyword">for</span> j = 1 : V
+            <span class="comment">% SBX (Simulated Binary Crossover).</span>
+            <span class="comment">% For more information about SBX refer the enclosed pdf file.</span>
+            <span class="comment">% Generate a random number</span>
+            u(j) = rand(1);
+            <span class="keyword">if</span> u(j) &lt;= 0.5
+                bq(j) = (2*u(j))^(1/(mu+1));
+            <span class="keyword">else</span>
+                bq(j) = (1/(2*(1 - u(j))))^(1/(mu+1));
+            <span class="keyword">end</span>
+            <span class="comment">% Generate the jth element of first child</span>
+            child_1(j) = <span class="keyword">...</span>
+                0.5*(((1 + bq(j))*parent_1(j)) + (1 - bq(j))*parent_2(j));
+            <span class="comment">% Generate the jth element of second child</span>
+            child_2(j) = <span class="keyword">...</span>
+                0.5*(((1 - bq(j))*parent_1(j)) + (1 + bq(j))*parent_2(j));
+            <span class="comment">% Make sure that the generated element is within the specified</span>
+            <span class="comment">% decision space else set it to the appropriate extrema.</span>
+            <span class="keyword">if</span> child_1(j) &gt; u_limit(j)
+                child_1(j) = u_limit(j);
+            <span class="keyword">elseif</span> child_1(j) &lt; l_limit(j)
+                child_1(j) = l_limit(j);
+            <span class="keyword">end</span>
+            <span class="keyword">if</span> child_2(j) &gt; u_limit(j)
+                child_2(j) = u_limit(j);
+            <span class="keyword">elseif</span> child_2(j) &lt; l_limit(j)
+                child_2(j) = l_limit(j);
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+        <span class="comment">% Evaluate the objective function for the offsprings and as before</span>
+        <span class="comment">% concatenate the offspring chromosome with objective value.</span>
+        child_1(:,V + 1: M + V) = evaluate_objective(child_1, M, V);
+        child_2(:,V + 1: M + V) = evaluate_objective(child_2, M, V);
+        <span class="comment">% Set the crossover flag. When crossover is performed two children</span>
+        <span class="comment">% are generate, while when mutation is performed only only child is</span>
+        <span class="comment">% generated.</span>
+        was_crossover = 1;
+        was_mutation = 0;
+    <span class="comment">% With 10 % probability perform mutation. Mutation is based on</span>
+    <span class="comment">% polynomial mutation.</span>
+    <span class="keyword">else</span>
+        <span class="comment">% Select at random the parent.</span>
+        parent_3 = round(N*rand(1));
+        <span class="keyword">if</span> parent_3 &lt; 1
+            parent_3 = 1;
+        <span class="keyword">end</span>
+        <span class="comment">% Get the chromosome information for the randomnly selected parent.</span>
+        child_3 = parent_chromosome(parent_3,:);
+        <span class="comment">% Perform mutation on eact element of the selected parent.</span>
+        <span class="keyword">for</span> j = 1 : V
+           r(j) = rand(1);
+           <span class="keyword">if</span> r(j) &lt; 0.5
+               delta(j) = (2*r(j))^(1/(mum+1)) - 1;
+           <span class="keyword">else</span>
+               delta(j) = 1 - (2*(1 - r(j)))^(1/(mum+1));
+           <span class="keyword">end</span>
+           <span class="comment">% Generate the corresponding child element.</span>
+           child_3(j) = child_3(j) + delta(j);
+           <span class="comment">% Make sure that the generated element is within the decision</span>
+           <span class="comment">% space.</span>
+           <span class="keyword">if</span> child_3(j) &gt; u_limit(j)
+               child_3(j) = u_limit(j);
+           <span class="keyword">elseif</span> child_3(j) &lt; l_limit(j)
+               child_3(j) = l_limit(j);
+           <span class="keyword">end</span>
+        <span class="keyword">end</span>
+        <span class="comment">% Evaluate the objective function for the offspring and as before</span>
+        <span class="comment">% concatenate the offspring chromosome with objective value.</span>
+        child_3(:,V + 1: M + V) = evaluate_objective(child_3, M, V);
+        <span class="comment">% Set the mutation flag</span>
+        was_mutation = 1;
+        was_crossover = 0;
+    <span class="keyword">end</span>
+    <span class="comment">% Keep proper count and appropriately fill the child variable with all</span>
+    <span class="comment">% the generated children for the particular generation.</span>
+    <span class="keyword">if</span> was_crossover
+        child(p,:) = child_1;
+        child(p+1,:) = child_2;
+        was_cossover = 0;
+        p = p + 2;
+    <span class="keyword">elseif</span> was_mutation
+        child(p,:) = child_3(1,1 : M + V);
+        was_mutation = 0;
+        p = p + 1;
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+f = child;
+</pre><p class="footer"><br>
+         Published with MATLAB&reg; 7.0<br></p>
+      <!--
+##### SOURCE BEGIN #####
+
+
+%% function f  = genetic_operator(parent_chromosome, M, V, mu, mum, l_limit, u_limit)
+% 
+% This function is utilized to produce offsprings from parent chromosomes.
+% The genetic operators corssover and mutation which are carried out with
+% slight modifications from the original design. For more information read
+% the document enclosed. 
+%
+% parent_chromosome - the set of selected chromosomes.
+% M - number of objective functions
+% V - number of decision varaiables
+% mu - distribution index for crossover (read the enlcosed pdf file)
+% mum - distribution index for mutation (read the enclosed pdf file)
+% l_limit - a vector of lower limit for the corresponding decsion variables
+% u_limit - a vector of upper limit for the corresponding decsion variables
+%
+% The genetic operation is performed only on the decision variables, that
+% is the first V elements in the chromosome vector. 
+
+[N,m] = size(parent_chromosome);
+
+clear m
+p = 1;
+% Flags used to set if crossover and mutation were actually performed. 
+was_crossover = 0;
+was_mutation = 0;
+
+
+for i = 1 : N
+    % With 90 % probability perform crossover
+    if rand(1) < 0.9
+        % Initialize the children to be null vector.
+        child_1 = [];
+        child_2 = [];
+        % Select the first parent
+        parent_1 = round(N*rand(1));
+        if parent_1 < 1
+            parent_1 = 1;
+        end
+        % Select the second parent
+        parent_2 = round(N*rand(1));
+        if parent_2 < 1
+            parent_2 = 1;
+        end
+        % Make sure both the parents are not the same. 
+        while isequal(parent_chromosome(parent_1,:),parent_chromosome(parent_2,:))
+            parent_2 = round(N*rand(1));
+            if parent_2 < 1
+                parent_2 = 1;
+            end
+        end
+        % Get the chromosome information for each randomnly selected
+        % parents
+        parent_1 = parent_chromosome(parent_1,:);
+        parent_2 = parent_chromosome(parent_2,:);
+        % Perform corssover for each decision variable in the chromosome.
+        for j = 1 : V
+            % SBX (Simulated Binary Crossover).
+            % For more information about SBX refer the enclosed pdf file.
+            % Generate a random number
+            u(j) = rand(1);
+            if u(j) <= 0.5
+                bq(j) = (2*u(j))^(1/(mu+1));
+            else
+                bq(j) = (1/(2*(1 - u(j))))^(1/(mu+1));
+            end
+            % Generate the jth element of first child
+            child_1(j) = ...
+                0.5*(((1 + bq(j))*parent_1(j)) + (1 - bq(j))*parent_2(j));
+            % Generate the jth element of second child
+            child_2(j) = ...
+                0.5*(((1 - bq(j))*parent_1(j)) + (1 + bq(j))*parent_2(j));
+            % Make sure that the generated element is within the specified
+            % decision space else set it to the appropriate extrema.
+            if child_1(j) > u_limit(j)
+                child_1(j) = u_limit(j);
+            elseif child_1(j) < l_limit(j)
+                child_1(j) = l_limit(j);
+            end
+            if child_2(j) > u_limit(j)
+                child_2(j) = u_limit(j);
+            elseif child_2(j) < l_limit(j)
+                child_2(j) = l_limit(j);
+            end
+        end
+        % Evaluate the objective function for the offsprings and as before
+        % concatenate the offspring chromosome with objective value.
+        child_1(:,V + 1: M + V) = evaluate_objective(child_1, M, V);
+        child_2(:,V + 1: M + V) = evaluate_objective(child_2, M, V);
+        % Set the crossover flag. When crossover is performed two children
+        % are generate, while when mutation is performed only only child is
+        % generated.
+        was_crossover = 1;
+        was_mutation = 0;
+    % With 10 % probability perform mutation. Mutation is based on
+    % polynomial mutation. 
+    else
+        % Select at random the parent.
+        parent_3 = round(N*rand(1));
+        if parent_3 < 1
+            parent_3 = 1;
+        end
+        % Get the chromosome information for the randomnly selected parent.
+        child_3 = parent_chromosome(parent_3,:);
+        % Perform mutation on eact element of the selected parent.
+        for j = 1 : V
+           r(j) = rand(1);
+           if r(j) < 0.5
+               delta(j) = (2*r(j))^(1/(mum+1)) - 1;
+           else
+               delta(j) = 1 - (2*(1 - r(j)))^(1/(mum+1));
+           end
+           % Generate the corresponding child element.
+           child_3(j) = child_3(j) + delta(j);
+           % Make sure that the generated element is within the decision
+           % space.
+           if child_3(j) > u_limit(j)
+               child_3(j) = u_limit(j);
+           elseif child_3(j) < l_limit(j)
+               child_3(j) = l_limit(j);
+           end
+        end
+        % Evaluate the objective function for the offspring and as before
+        % concatenate the offspring chromosome with objective value.    
+        child_3(:,V + 1: M + V) = evaluate_objective(child_3, M, V);
+        % Set the mutation flag
+        was_mutation = 1;
+        was_crossover = 0;
+    end
+    % Keep proper count and appropriately fill the child variable with all
+    % the generated children for the particular generation.
+    if was_crossover
+        child(p,:) = child_1;
+        child(p+1,:) = child_2;
+        was_cossover = 0;
+        p = p + 2;
+    elseif was_mutation
+        child(p,:) = child_3(1,1 : M + V);
+        was_mutation = 0;
+        p = p + 1;
+    end
+end
+f = child;
+##### SOURCE END #####
+-->
+   </body>
+</html>

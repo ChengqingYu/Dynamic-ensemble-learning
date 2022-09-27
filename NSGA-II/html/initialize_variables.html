@@ -1,0 +1,166 @@
+<html xmlns:mwsh="http://www.mathworks.com/namespace/mcode/v1/syntaxhighlight.dtd">
+   <head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   
+      <!--
+This HTML is auto-generated from an M-file.
+To make changes, update the M-file and republish this document.
+      -->
+      <title>initialize_variables</title>
+      <meta name="generator" content="MATLAB 7.0">
+      <meta name="date" content="2006-03-16">
+      <meta name="m-file" content="initialize_variables"><style>
+body {
+  background-color: white;
+  margin:10px;
+}
+h1 {
+  color: #990000; 
+  font-size: x-large;
+}
+h2 {
+  color: #990000;
+  font-size: medium;
+}
+p.footer {
+  text-align: right;
+  font-size: xx-small;
+  font-weight: lighter;
+  font-style: italic;
+  color: gray;
+}
+
+pre.codeinput {
+  margin-left: 30px;
+}
+
+span.keyword {color: #0000FF}
+span.comment {color: #228B22}
+span.string {color: #A020F0}
+span.untermstring {color: #B20000}
+span.syscmd {color: #B28C00}
+
+pre.showbuttons {
+  margin-left: 30px;
+  border: solid black 2px;
+  padding: 4px;
+  background: #EBEFF3;
+}
+
+pre.codeoutput {
+  color: gray;
+  font-style: italic;
+}
+pre.error {
+  color: red;
+}
+
+/* Make the text shrink to fit narrow windows, but not stretch too far in 
+wide windows.  On Gecko-based browsers, the shrink-to-fit doesn't work. */ 
+p,h1,h2,div {
+  /* for MATLAB's browser */
+  width: 600px;
+  /* for Mozilla, but the "width" tag overrides it anyway */
+  max-width: 600px;
+  /* for IE */
+  width:expression(document.body.clientWidth > 620 ? "600px": "auto" );
+}
+
+    </style></head>
+   <body>
+      <h2>Contents</h2>
+      <div>
+         <ul>
+            <li><a href="#1">function f = initialize_variables(N, M, V, min_tange, max_range)</a></li>
+            <li><a href="#2">Initialize each chromosome</a></li>
+         </ul>
+      </div>
+      <h2>function f = initialize_variables(N, M, V, min_tange, max_range)<a name="1"></a></h2>
+      <p>This function initializes the chromosomes. Each chromosome has the following at this stage       * set of decision variables
+               * objective function values
+      </p>
+      <p>where, N - Population size M - Number of objective functions V - Number of decision variables min_range - A vector of decimal
+         values which indicate the minimum value for each decision variable. max_range - Vector of maximum possible values for decision
+         variables.
+      </p><pre class="codeinput">min = min_range;
+max = max_range;
+
+<span class="comment">% K is the total number of array elements. For ease of computation decision</span>
+<span class="comment">% variables and objective functions are concatenated to form a single</span>
+<span class="comment">% array. For crossover and mutation only the decision variables are used</span>
+<span class="comment">% while for selection, only the objective variable are utilized.</span>
+
+K = M + V;
+</pre><h2>Initialize each chromosome<a name="2"></a></h2>
+      <p>For each chromosome perform the following (N is the population size)</p><pre class="codeinput"><span class="keyword">for</span> i = 1 : N
+    <span class="comment">% Initialize the decision variables based on the minimum and maximum</span>
+    <span class="comment">% possible values. V is the number of decision variable. A random</span>
+    <span class="comment">% number is picked between the minimum and maximum possible values for</span>
+    <span class="comment">% the each decision variable.</span>
+    <span class="keyword">for</span> j = 1 : V
+        f(i,j) = min(j) + (max(j) - min(j))*rand(1);
+    <span class="keyword">end</span>
+    <span class="comment">% For ease of computation and handling data the chromosome also has the</span>
+    <span class="comment">% vlaue of the objective function concatenated at the end. The elements</span>
+    <span class="comment">% V + 1 to K has the objective function valued.</span>
+    <span class="comment">% The function evaluate_objective takes one chromosome at a time,</span>
+    <span class="comment">% infact only the decision variables are passed to the function along</span>
+    <span class="comment">% with information about the number of objective functions which are</span>
+    <span class="comment">% processed and returns the value for the objective functions. These</span>
+    <span class="comment">% values are now stored at the end of the chromosome itself.</span>
+    f(i,V + 1: K) = evaluate_objective(f(i,:), M, V);
+<span class="keyword">end</span>
+</pre><p class="footer"><br>
+         Published with MATLAB&reg; 7.0<br></p>
+      <!--
+##### SOURCE BEGIN #####
+
+
+%% function f = initialize_variables(N, M, V, min_tange, max_range) 
+% This function initializes the chromosomes. Each chromosome has the
+% following at this stage
+%       * set of decision variables
+%       * objective function values
+% 
+% where,
+% N - Population size
+% M - Number of objective functions
+% V - Number of decision variables
+% min_range - A vector of decimal values which indicate the minimum value
+% for each decision variable.
+% max_range - Vector of maximum possible values for decision variables.
+
+min = min_range;
+max = max_range;
+
+% K is the total number of array elements. For ease of computation decision
+% variables and objective functions are concatenated to form a single
+% array. For crossover and mutation only the decision variables are used
+% while for selection, only the objective variable are utilized.
+
+K = M + V;
+
+%% Initialize each chromosome
+% For each chromosome perform the following (N is the population size)
+for i = 1 : N
+    % Initialize the decision variables based on the minimum and maximum
+    % possible values. V is the number of decision variable. A random
+    % number is picked between the minimum and maximum possible values for
+    % the each decision variable.
+    for j = 1 : V
+        f(i,j) = min(j) + (max(j) - min(j))*rand(1);
+    end
+    % For ease of computation and handling data the chromosome also has the
+    % vlaue of the objective function concatenated at the end. The elements
+    % V + 1 to K has the objective function valued. 
+    % The function evaluate_objective takes one chromosome at a time,
+    % infact only the decision variables are passed to the function along
+    % with information about the number of objective functions which are
+    % processed and returns the value for the objective functions. These
+    % values are now stored at the end of the chromosome itself.
+    f(i,V + 1: K) = evaluate_objective(f(i,:), M, V);
+end
+##### SOURCE END #####
+-->
+   </body>
+</html>

@@ -1,0 +1,158 @@
+<html xmlns:mwsh="http://www.mathworks.com/namespace/mcode/v1/syntaxhighlight.dtd">
+   <head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   
+      <!--
+This HTML is auto-generated from an M-file.
+To make changes, update the M-file and republish this document.
+      -->
+      <title>function [number_of_objectives, number_of_decision_variables, min_range_of_decesion_variable, max_range_of_decesion_variable]
+         = objective_description_function()
+      </title>
+      <meta name="generator" content="MATLAB 7.0">
+      <meta name="date" content="2006-03-16">
+      <meta name="m-file" content="objective_description_function"><style>
+body {
+  background-color: white;
+  margin:10px;
+}
+h1 {
+  color: #990000; 
+  font-size: x-large;
+}
+h2 {
+  color: #990000;
+  font-size: medium;
+}
+p.footer {
+  text-align: right;
+  font-size: xx-small;
+  font-weight: lighter;
+  font-style: italic;
+  color: gray;
+}
+
+pre.codeinput {
+  margin-left: 30px;
+}
+
+span.keyword {color: #0000FF}
+span.comment {color: #228B22}
+span.string {color: #A020F0}
+span.untermstring {color: #B20000}
+span.syscmd {color: #B28C00}
+
+pre.showbuttons {
+  margin-left: 30px;
+  border: solid black 2px;
+  padding: 4px;
+  background: #EBEFF3;
+}
+
+pre.codeoutput {
+  color: gray;
+  font-style: italic;
+}
+pre.error {
+  color: red;
+}
+
+/* Make the text shrink to fit narrow windows, but not stretch too far in 
+wide windows.  On Gecko-based browsers, the shrink-to-fit doesn't work. */ 
+p,h1,h2,div {
+  /* for MATLAB's browser */
+  width: 600px;
+  /* for Mozilla, but the "width" tag overrides it anyway */
+  max-width: 600px;
+  /* for IE */
+  width:expression(document.body.clientWidth > 620 ? "600px": "auto" );
+}
+
+    </style></head>
+   <body>
+      <h1>function [number_of_objectives, number_of_decision_variables, min_range_of_decesion_variable, max_range_of_decesion_variable]
+         = objective_description_function()
+      </h1>
+      <p>This function is used to completely describe the objective functions and the range for the decision variable space etc. The
+         user is prompted for inputing the number of objectives, numebr of decision variables, the maximum and minimum range for each
+         decision variable and finally the function waits for the user to modify the evaluate_objective function to suit their need.
+      </p><pre class="codeinput">g = sprintf(<span class="string">'Input the number of objective: '</span>);
+<span class="comment">% Obtain the number of objective function</span>
+number_of_objectives = input(g);
+g = sprintf(<span class="string">'\nInput the number of decision variables: '</span>);
+<span class="comment">% Obtain the number of decision variables</span>
+number_of_decision_variables = input(g);
+clc
+<span class="keyword">for</span> i = 1 : number_of_decision_variables
+    clc
+    g = sprintf(<span class="string">'\nInput the minimum value for decision variable %d : '</span>, i);
+    <span class="comment">% Obtain the minimum possible value for each decision variable</span>
+    min_range_of_decesion_variable(i) = input(g);
+    g = sprintf(<span class="string">'\nInput the maximum value for decision variable %d : '</span>, i);
+    <span class="comment">% Obtain the maximum possible value for each decision variable</span>
+    max_range_of_decesion_variable(i) = input(g);
+    clc
+<span class="keyword">end</span>
+g = sprintf(<span class="string">'\n Now edit the function named "evaluate_objective" appropriately to match your needs.\n Make sure that the number of objective functions and decision variables match your numerical input. \n Make each objective function as a corresponding array element. \n After editing do not forget to save. \n Press "c" and enter to continue... '</span>);
+<span class="comment">% Prompt the user to edit the evaluate_objective function and wait until</span>
+<span class="comment">% 'c' is pressed.</span>
+x = input(g, <span class="string">'s'</span>);
+<span class="keyword">if</span> isempty(x)
+    x = <span class="string">'x'</span>;
+<span class="keyword">end</span>
+<span class="keyword">while</span> x ~= <span class="string">'c'</span>
+    clc
+    x = input(g, <span class="string">'s'</span>);
+    <span class="keyword">if</span> isempty(x)
+        x = <span class="string">'x'</span>;
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+</pre><p class="footer"><br>
+         Published with MATLAB&reg; 7.0<br></p>
+      <!--
+##### SOURCE BEGIN #####
+
+
+%% function [number_of_objectives, number_of_decision_variables, min_range_of_decesion_variable, max_range_of_decesion_variable] = objective_description_function()
+% This function is used to completely describe the objective functions and
+% the range for the decision variable space etc. The user is prompted for
+% inputing the number of objectives, numebr of decision variables, the
+% maximum and minimum range for each decision variable and finally the
+% function waits for the user to modify the evaluate_objective function to
+% suit their need.
+
+g = sprintf('Input the number of objective: ');
+% Obtain the number of objective function
+number_of_objectives = input(g);
+g = sprintf('\nInput the number of decision variables: ');
+% Obtain the number of decision variables
+number_of_decision_variables = input(g);
+clc
+for i = 1 : number_of_decision_variables
+    clc
+    g = sprintf('\nInput the minimum value for decision variable %d : ', i);
+    % Obtain the minimum possible value for each decision variable
+    min_range_of_decesion_variable(i) = input(g);
+    g = sprintf('\nInput the maximum value for decision variable %d : ', i);
+    % Obtain the maximum possible value for each decision variable
+    max_range_of_decesion_variable(i) = input(g);
+    clc
+end
+g = sprintf('\n Now edit the function named "evaluate_objective" appropriately to match your needs.\n Make sure that the number of objective functions and decision variables match your numerical input. \n Make each objective function as a corresponding array element. \n After editing do not forget to save. \n Press "c" and enter to continue... ');
+% Prompt the user to edit the evaluate_objective function and wait until
+% 'c' is pressed.
+x = input(g, 's');
+if isempty(x)
+    x = 'x';
+end
+while x ~= 'c'
+    clc
+    x = input(g, 's');
+    if isempty(x)
+        x = 'x';
+    end
+end    
+##### SOURCE END #####
+-->
+   </body>
+</html>
