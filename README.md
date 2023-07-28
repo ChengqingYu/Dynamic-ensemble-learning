@@ -5,6 +5,7 @@ This code is an open source part of the paper 《A dynamic ensemble deep determi
 
 If this code can help you, please cite the following paper
 
+```bibtex
 @article{mi2022dynamic,
   title={A dynamic ensemble deep deterministic policy gradient recursive network for spatiotemporal traffic speed forecasting in an urban road network},
   author={Mi, Xiwei and Yu, Chengqing and Liu, Xinwei and Yan, Guangxi and Yu, Fuhao and Shang, Pan},
@@ -14,3 +15,4 @@ If this code can help you, please cite the following paper
   year={2022},
   publisher={Elsevier}
 }
+```
